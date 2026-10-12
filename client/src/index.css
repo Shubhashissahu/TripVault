@@ -28,6 +28,10 @@ body {
   flex-direction: column;
 }
 
+.app-main {
+  flex: 1;
+}
+
 button,
 input,
 select,
@@ -160,8 +164,107 @@ button.danger {
   padding-inline: 0.9rem;
 }
 
+.site-footer {
+  margin-top: auto;
+  background: #0f172a;
+  color: #cbd5e1;
+}
+
+.footer-main,
+.footer-bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-right: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.footer-main {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.2fr) 1fr;
+  gap: 4rem;
+  padding-top: 3rem;
+  padding-bottom: 2.5rem;
+}
+
+.footer-about {
+  max-width: 380px;
+}
+
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: #f8fafc;
+  text-decoration: none;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.footer-brand-mark {
+  display: inline-flex;
+  width: 2.3rem;
+  height: 2.3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #38bdf8, #6366f1);
+  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.2);
+}
+
+.footer-about p {
+  margin: 1rem 0 0;
+  color: #94a3b8;
+  line-height: 1.7;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: flex-end;
+  gap: clamp(2rem, 7vw, 6rem);
+}
+
+.footer-link-group {
+  display: flex;
+  min-width: 130px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.footer-link-group h2 {
+  margin: 0 0 0.25rem;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.footer-link-group a {
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.footer-link-group a:hover,
+.footer-link-group a:focus-visible,
+.footer-brand:hover,
+.footer-brand:focus-visible {
+  color: #fff;
+}
+
+.footer-bottom {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
 .home-shell {
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 148px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,6 +366,29 @@ button.danger {
   padding: 2rem;
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(6px);
+}
+
+@media (max-width: 600px) {
+  .footer-main {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-top: 2.5rem;
+    padding-bottom: 2rem;
+  }
+
+  .footer-links {
+    justify-content: flex-start;
+    gap: 2.5rem;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.4rem;
+    text-align: center;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
 }
 
 .card h1,
