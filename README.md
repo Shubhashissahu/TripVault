@@ -114,4 +114,31 @@ All routes require `Authorization: Bearer <token>`.
 | `rating` | Number | 1–5 |
 | `user` | ObjectId | References User; assigned server-side from the authenticated JWT |
 
+## Features (Week 3)
+- Photo uploads to Cloudinary (JPG/PNG/WEBP, max 5 MB, up to 20 per trip)
+- Cover image on trip cards; photo grid with lightbox on the trip detail page
+- Public profiles at `/profile/:username`, viewable without login
+- Public API returns an allow-listed set of safe fields only (never email or password)
+- Edit bio and username from the dashboard
+- Frontend styled with Tailwind CSS
+
+## New API Endpoints
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | /api/trips/:id/upload | Yes (owner) | Upload one image (`image` form field) |
+| GET | /api/users/:username/profile | **No** | Public profile: name, username, bio, trip summaries |
+| PUT | /api/users/profile | Yes | Update own bio / username |
+
+## Environment Variables (server/.env)
+`PORT`, `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+
+## Design Notes
+- Ownership is verified **before** the file is sent to Cloudinary, so unauthorised requests cannot consume upload quota.
+- Image URLs can only be written through the upload route, never via `PUT /api/trips/:id`.
+- Creating a trip and uploading its photos are two requests (a trip needs an ID before photos can attach). Partial failures are surfaced in the UI.
+
+## Known Limitations
+- Deleting a trip does not yet remove its images from Cloudinary.
+- JWT is stored in localStorage per the project spec.
+
 
