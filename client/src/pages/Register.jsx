@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Register() {
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', username: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { register } = useAuth();
@@ -16,7 +16,7 @@ export default function Register() {
     setError('');
     setSubmitting(true);
     try {
-      await register(form.name, form.email, form.password);
+      await register(form.name, form.username, form.email, form.password);
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -31,6 +31,7 @@ export default function Register() {
       {error && <p className="error">{error}</p>}
       <form onSubmit={handleSubmit}>
         <input name="name" placeholder="Name" value={form.name} onChange={handleChange} required />
+        <input name="username" placeholder="Username" value={form.username} onChange={handleChange} required />
         <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
         <input name="password" type="password" placeholder="Password (min 6 chars)" value={form.password} onChange={handleChange} required minLength={6} />
         <button disabled={submitting}>{submitting ? 'Creating...' : 'Register'}</button>

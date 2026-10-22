@@ -8,7 +8,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On app load, validate the stored token against /me
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -28,8 +27,8 @@ export function AuthProvider({ children }) {
     setUser(res.data.user);
   };
 
-  const register = (name, email, password) =>
-    api.post('/auth/register', { name, email, password });
+  const register = (name, username, email, password) =>
+    api.post('/auth/register', { name, username, email, password });
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -37,7 +36,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser: setUser }}>
       {children}
     </AuthContext.Provider>
   );
