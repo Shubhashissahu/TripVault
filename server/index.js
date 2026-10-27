@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
-import tripRoutes from './routes/trips.js';  
+import tripRoutes from './routes/trips.js';
+import userRoutes from './routes/users.js';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.get('/', (req, res) => res.json({ message: 'TripVault API running' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);     
+app.use('/api/users', userRoutes);
 
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 
