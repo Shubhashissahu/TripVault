@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Trip from '../models/Trip.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { uploadImage } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -95,6 +96,29 @@ router.delete('/:id', validateId, loadOwnedTrip, async (req, res) => {
   } catch (err) {
     handleError(err, res);
   }
-});
+});const MAX_PHOTOS = 20;
 
+const photoLimit = (req, res, next) => {
+  if (req.trip.photos.length >= MAX_PHOTOS) {
+    return res.status(400).json({ message: `A trip can have at most ${MAX_PHOTOS} photos` });
+  }
+  next();
+};
+
+// POST /api/trips/:id/upload: attach one photo (owner only)
+// Order matters: ownership is verified BEFORE multer runs, so strangers can't burn your Cloudinary quota
+router.post('/:id/upload', validateId, loadOwnedTrip, photoLimit, uploadImage, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No image file provided' });
+
+    const url = req.file.path; // Cloudinary secure URL
+    req.trip.photos.push(url);
+    if (!req.trip.coverImage) req.trip.coverImage = url; // first photo becomes the cover
+
+    await req.trip.save();
+    res.status(201).json(req.trip);
+  } catch (err) {
+    handleError(err, res);
+  }
+});
 export default router;
