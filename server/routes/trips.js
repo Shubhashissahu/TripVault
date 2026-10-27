@@ -1,8 +1,19 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import { v2 as cloudinary } from 'cloudinary';
 import Trip from '../models/Trip.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { uploadImage } from '../middleware/upload.js';
+
+// Extracts Cloudinary public_id from secure URL to allow clean deletion
+const extractPublicId = (url) => {
+  if (!url || typeof url !== 'string' || !url.includes('/upload/')) return null;
+  const parts = url.split('/upload/')[1];
+  if (!parts) return null;
+  const withoutVersion = parts.replace(/^v\d+\//, '');
+  const dotIndex = withoutVersion.lastIndexOf('.');
+  return dotIndex !== -1 ? withoutVersion.substring(0, dotIndex) : withoutVersion;
+};
 
 const router = express.Router();
 
@@ -10,7 +21,7 @@ const router = express.Router();
 router.use(protect);
 
 // Only these fields can ever be written by a client
-const ALLOWED_FIELDS = ['title', 'destination', 'startDate', 'endDate', 'description', 'rating'];
+const ALLOWED_FIELDS = ['title', 'destination', 'startDate', 'endDate', 'description', 'rating', 'isPrivate'];
 
 const pickAllowed = (body) =>
   Object.fromEntries(Object.entries(body).filter(([key]) => ALLOWED_FIELDS.includes(key)));
@@ -91,12 +102,26 @@ router.put('/:id', validateId, loadOwnedTrip, async (req, res) => {
 // DELETE /api/trips/:id: delete (owner only)
 router.delete('/:id', validateId, loadOwnedTrip, async (req, res) => {
   try {
+    const photosToDelete = [...(req.trip.photos || [])];
     await req.trip.deleteOne();
+
+    // Cleanup Cloudinary assets asynchronously in the background so storage quota isn't wasted
+    if (photosToDelete.length > 0) {
+      Promise.allSettled(
+        photosToDelete.map((url) => {
+          const publicId = extractPublicId(url);
+          return publicId ? cloudinary.uploader.destroy(publicId) : Promise.resolve();
+        })
+      ).catch((err) => console.error('Cloudinary cleanup error on delete:', err));
+    }
+
     res.json({ message: 'Trip deleted successfully' });
   } catch (err) {
     handleError(err, res);
   }
-});const MAX_PHOTOS = 20;
+});
+
+const MAX_PHOTOS = 20;
 
 const photoLimit = (req, res, next) => {
   if (req.trip.photos.length >= MAX_PHOTOS) {
@@ -112,13 +137,92 @@ router.post('/:id/upload', validateId, loadOwnedTrip, photoLimit, uploadImage, a
     if (!req.file) return res.status(400).json({ message: 'No image file provided' });
 
     const url = req.file.path; // Cloudinary secure URL
-    req.trip.photos.push(url);
-    if (!req.trip.coverImage) req.trip.coverImage = url; // first photo becomes the cover
 
-    await req.trip.save();
-    res.status(201).json(req.trip);
+    // Atomic update enforcing quota at the database level to prevent race condition limit bypasses
+    const updatedTrip = await Trip.findOneAndUpdate(
+      {
+        _id: req.trip._id,
+        $expr: { $lt: [{ $size: '$photos' }, MAX_PHOTOS] },
+      },
+      [
+        {
+          $set: {
+            photos: { $concatArrays: ['$photos', [url]] },
+            coverImage: {
+              $cond: {
+                if: { $or: [{ $eq: ['$coverImage', ''] }, { $not: ['$coverImage'] }] },
+                then: url,
+                else: '$coverImage',
+              },
+            },
+          },
+        },
+      ],
+      { new: true }
+    );
+
+    if (!updatedTrip) {
+      // If concurrent uploads exceeded MAX_PHOTOS, immediately delete the uploaded file from Cloudinary
+      const publicId = extractPublicId(url);
+      if (publicId) await cloudinary.uploader.destroy(publicId).catch(() => {});
+      return res.status(400).json({ message: `A trip can have at most ${MAX_PHOTOS} photos` });
+    }
+
+    res.status(201).json(updatedTrip);
   } catch (err) {
     handleError(err, res);
   }
 });
+
+// DELETE /api/trips/:id/photos: delete a single photo (owner only)
+router.delete('/:id/photos', validateId, loadOwnedTrip, async (req, res) => {
+  try {
+    const { photoUrl } = req.body;
+    if (!photoUrl || typeof photoUrl !== 'string') {
+      return res.status(400).json({ message: 'photoUrl is required' });
+    }
+
+    if (!req.trip.photos.includes(photoUrl)) {
+      return res.status(404).json({ message: 'Photo not found in this trip' });
+    }
+
+    const remainingPhotos = req.trip.photos.filter((p) => p !== photoUrl);
+    const newCoverImage = req.trip.coverImage === photoUrl
+      ? (remainingPhotos[0] || '')
+      : req.trip.coverImage;
+
+    req.trip.photos = remainingPhotos;
+    req.trip.coverImage = newCoverImage;
+    await req.trip.save();
+
+    // Clean up from Cloudinary in the background
+    const publicId = extractPublicId(photoUrl);
+    if (publicId) {
+      cloudinary.uploader.destroy(publicId).catch((err) =>
+        console.error('Cloudinary photo deletion failed:', err)
+      );
+    }
+
+    res.json(req.trip);
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+// PUT /api/trips/:id/cover: set a specific photo as cover (owner only)
+router.put('/:id/cover', validateId, loadOwnedTrip, async (req, res) => {
+  try {
+    const { coverImage } = req.body;
+    if (!coverImage || typeof coverImage !== 'string' || !req.trip.photos.includes(coverImage)) {
+      return res.status(400).json({ message: 'Selected photo is not part of this trip' });
+    }
+
+    req.trip.coverImage = coverImage;
+    await req.trip.save();
+    res.json(req.trip);
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
 export default router;

@@ -19,7 +19,12 @@ const storage = new CloudinaryStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) return cb(null, true);
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+  const allowedExts = /\.(jpe?g|png|webp)$/i;
+
+  if (allowedMimes.includes(file.mimetype) && allowedExts.test(file.originalname)) {
+    return cb(null, true);
+  }
   cb(new Error('Only JPG, PNG or WEBP images are allowed'));
 };
 
