@@ -40,7 +40,7 @@ router.get('/:username/profile', async (req, res) => {
 
     if (!user) return res.status(404).json({ message: 'Traveller not found' });
 
-    const trips = await Trip.find({ user: user._id })
+    const trips = await Trip.find({ user: user._id, isPrivate: false })
       .select('title destination startDate endDate rating coverImage')
       .sort({ startDate: -1, createdAt: -1 });
 

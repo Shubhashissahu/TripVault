@@ -13,6 +13,7 @@ export default function TripForm({ initialData, onSubmit, onCancel }) {
     endDate: toDateInput(initialData?.endDate),
     description: initialData?.description || '',
     rating: initialData?.rating || '',
+    isPrivate: initialData?.isPrivate !== undefined ? initialData.isPrivate : true,
   });
   const [items, setItems] = useState([]); // [{ file, url }] new photos queued for upload
   const [error, setError] = useState('');
@@ -60,6 +61,7 @@ export default function TripForm({ initialData, onSubmit, onCancel }) {
       startDate: form.startDate || null,
       endDate: form.endDate || null,
       rating: form.rating ? Number(form.rating) : null,
+      isPrivate: Boolean(form.isPrivate),
     };
 
     setSubmitting(true);
@@ -103,6 +105,27 @@ export default function TripForm({ initialData, onSubmit, onCancel }) {
 
       <label className={labelCls}>Notes / memories
         <textarea name="description" rows={3} value={form.description} onChange={handleChange} maxLength={2000} className={inputCls} />
+      </label>
+
+      {/* Visibility Toggle */}
+      <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 cursor-pointer hover:bg-slate-100/80 transition">
+        <input
+          type="checkbox"
+          name="isPrivate"
+          checked={form.isPrivate}
+          onChange={(e) => setForm({ ...form, isPrivate: e.target.checked })}
+          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+        />
+        <div className="flex flex-col text-sm">
+          <span className="font-semibold text-slate-800">
+            {form.isPrivate ? '🔒 Private Trip' : '🌐 Public Trip'}
+          </span>
+          <span className="text-xs text-slate-500">
+            {form.isPrivate
+              ? 'Only visible to you in your vault (hidden from your public profile)'
+              : 'Visible to anyone visiting your public profile'}
+          </span>
+        </div>
       </label>
 
       {/* Photos */}

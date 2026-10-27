@@ -19,6 +19,7 @@ const tripSchema = new mongoose.Schema(
     rating: { type: Number, min: [1, 'Rating must be at least 1'], max: [5, 'Rating cannot exceed 5'] },
     coverImage: { type: String, default: '' },
     photos: { type: [String], default: [] },
+    isPrivate: { type: Boolean, default: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   },
   { timestamps: true }

@@ -9,7 +9,8 @@ export const btnDanger =
   'inline-flex items-center justify-center rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100';
 export const errorCls = 'rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200';
 export const noticeCls = 'rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200';
-export const authCardCls = 'mx-auto mt-16 w-full max-w-sm rounded-2xl bg-white p-8 shadow-lg ring-1 ring-slate-200';
+export const authCardCls =
+  'mx-auto my-10 w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-white p-8 shadow-lg ring-1 ring-slate-200';
 
 // Cloudinary delivery optimisation: resized, auto-format, auto-quality
 export const cdn = (url, width = 600) =>

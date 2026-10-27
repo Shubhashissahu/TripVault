@@ -18,7 +18,20 @@ export default function TripCard({ trip, to, onEdit, onDelete }) {
         </div>
       )}
       <div className="space-y-1 p-4">
-        <h3 className="truncate text-lg font-semibold text-slate-900">{trip.title}</h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="truncate text-lg font-semibold text-slate-900">{trip.title}</h3>
+          {trip.isPrivate !== undefined && (
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                trip.isPrivate
+                  ? 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
+                  : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+              }`}
+            >
+              {trip.isPrivate ? '🔒 Private' : '🌐 Public'}
+            </span>
+          )}
+        </div>
         <p className="truncate text-sm text-slate-600">📍 {trip.destination}</p>
         <p className="text-sm text-slate-500">
           🗓️ {start ? (end ? `${start} → ${end}` : start) : 'Dates not set'}

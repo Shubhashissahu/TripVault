@@ -73,12 +73,12 @@ export default function PublicProfile() {
           <p className="mt-3 italic text-slate-400">This traveller hasn't written a bio yet.</p>
         )}
         <p className="mt-4 text-sm font-medium text-slate-600">
-          {trips.length} {trips.length === 1 ? 'trip' : 'trips'}
+          {trips.length} {trips.length === 1 ? 'public trip' : 'public trips'}
         </p>
       </header>
 
       {trips.length === 0 ? (
-        <p className="mt-12 text-center text-slate-500">No trips shared yet. 🌍</p>
+        <p className="mt-12 text-center text-slate-500">No public trips shared yet. 🌍</p>
       ) : (
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {trips.map((trip) => <TripCard key={trip._id} trip={trip} />)}
