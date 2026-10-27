@@ -33,7 +33,15 @@ export default function Register() {
         <input name="name" placeholder="Name" value={form.name} onChange={handleChange} required />
         <input name="username" placeholder="Username" value={form.username} onChange={handleChange} required />
         <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
-        <input name="password" type="password" placeholder="Password (min 6 chars)" value={form.password} onChange={handleChange} required minLength={6} />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password (min 8 chars, letters & numbers)"
+          value={form.password}
+          onChange={handleChange}
+          required
+          minLength={8}
+        />
         <button disabled={submitting}>{submitting ? 'Creating...' : 'Register'}</button>
       </form>
       <p>Already have an account? <Link to="/login">Login</Link></p>

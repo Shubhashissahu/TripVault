@@ -7,6 +7,7 @@ import tripRoutes from './routes/trips.js';
 import userRoutes from './routes/users.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 const authLimiter = rateLimit({
@@ -17,8 +18,9 @@ const authLimiter = rateLimit({
 const app = express();
 app.set('trust proxy', 1); // Render sits behind a proxy; without this, rate limiting sees one IP for everyone
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/', (req, res) => res.json({ message: 'TripVault API running' }));
 app.use('/api/auth/login', authLimiter);

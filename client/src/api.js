@@ -3,6 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   timeout: 60000, // Render's free tier can take ~50s to wake up
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {

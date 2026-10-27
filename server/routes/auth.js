@@ -6,8 +6,32 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-const signToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+const signToken = (id, tokenVersion = 0) =>
+  jwt.sign({ id, tokenVersion }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+const setAuthCookie = (res, token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+};
+
+const WEAK_PASSWORDS = new Set(['123456', '12345678', 'password', 'qwerty', '111111', '123456789']);
+
+const validatePasswordStrength = (password) => {
+  if (typeof password !== 'string' || password.length < 8) {
+    return 'Password must be at least 8 characters long';
+  }
+  if (WEAK_PASSWORDS.has(password.toLowerCase())) {
+    return 'Password is too common and easily guessed. Please choose a stronger password.';
+  }
+  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+    return 'Password must contain at least one letter and one number';
+  }
+  return null;
+};
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
@@ -17,8 +41,10 @@ router.post('/register', async (req, res) => {
     if (!name || !username || !email || !password) {
       return res.status(400).json({ message: 'Name, username, email and password are required' });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+
+    const passwordError = validatePasswordStrength(password);
+    if (passwordError) {
+      return res.status(400).json({ message: passwordError });
     }
 
     const [emailTaken, usernameTaken] = await Promise.all([
@@ -34,7 +60,6 @@ router.post('/register', async (req, res) => {
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
     if (err.code === 11000) {
-      // Race condition safety net: two simultaneous signups with the same value
       return res.status(409).json({ message: 'Email or username already taken' });
     }
     if (err.name === 'ValidationError') {
@@ -61,8 +86,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    const token = signToken(user._id, user.tokenVersion || 0);
+    setAuthCookie(res, token);
+
     res.json({
-      token: signToken(user._id),
+      token,
       user: { id: user._id, name: user.name, username: user.username, email: user.email, bio: user.bio },
     });
   } catch (err) {
@@ -71,7 +99,29 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/me  (protected)
+// POST /api/auth/logout - clears cookie and increments tokenVersion to revoke active sessions
+router.post('/logout', async (req, res) => {
+  let token = null;
+  const header = req.headers.authorization;
+  if (header && header.startsWith('Bearer ')) token = header.split(' ')[1];
+  else if (req.cookies && req.cookies.token) token = req.cookies.token;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      await User.findByIdAndUpdate(decoded.id, { $inc: { tokenVersion: 1 } });
+    } catch {}
+  }
+
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  });
+  res.json({ message: 'Logged out successfully' });
+});
+
+// GET /api/auth/me (protected)
 router.get('/me', protect, (req, res) => {
   res.json({ user: req.user });
 });
